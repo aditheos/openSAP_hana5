@@ -1,3 +1,33 @@
 ID: openSAP_hana5
 _schema-version: '2.0'
 version: 0.0.1
+modules:
+  - name: web
+    type: html5
+    path: web
+    requires:
+    - name: openSAP_hana5-uaa
+
+  - name: psdb
+    type: hdb
+    path: psdb
+    requires:
+     - name: hdi_psdb_2
+
+resources:
+  - name: openSAP_hana5-uaa
+    type: com.sap.xs.uaa
+    parameters:
+      config_path: ./xs-security.json
+
+  - name: hdi_psdb_2
+    parameters:
+       config:
+          schema: hana5
+    properties:
+       hdi-container-name_2: ${service-name}
+    type: com.sap.xs.hdi-container
+
+provider: eprsonline
+description: Software Development on SAP HANA (Update Q4/2016)
+copyright: eprsonline
