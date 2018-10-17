@@ -6,31 +6,65 @@ modules:
     type: html5
     path: web
     requires:
-    - name: openSAP_hana5-uaa
-
+      - name: openSAP_hana5-uaa
+      - name: core_xsjs_api
+        group: destinations
+        properties:
+          name: core-xsjs-backend
+          url: '~{url}'
+          forwardAuthToken: true
   - name: psdb
     type: hdb
     path: psdb
     requires:
-     - name: hdi_psdb_2
-
-
-  
-
+      - name: hdi_psdb_2
+        properties:
+          TARGET_CONTAINER: '~{hdi-container-name_2}'
+      - name: cross-container-products
+        group: SERVICE_REPLACEMENTS
+        properties:
+          key: ServiceName_Products
+          service: '~{product-service-name}'
+      - name: cross-container-sflights
+        group: SERVICE_REPLACEMENTS
+        properties:
+          key: ServiceName_Sflights
+          service: '~{sflight-service-name}'
+  - name: core_xsjs
+    type: nodejs
+    path: core_xsjs
+    provides:
+      - name: core_xsjs_api
+        properties:
+          url: '${default-url}'
+    requires:
+      - name: openSAP_hana5-uaa
+      - name: hdi_psdb_2
+      - name: psdb
 resources:
   - name: openSAP_hana5-uaa
     type: com.sap.xs.uaa
     parameters:
       config_path: ./xs-security.json
-
   - name: hdi_psdb_2
     parameters:
-       config:
-          schema: hana5
+      config:
+        schema: hana5
     properties:
-       hdi-container-name_2: ${service-name}
+      hdi-container-name_2: '${service-name}'
     type: com.sap.xs.hdi-container
-
+  - name: cross-container-products
+    parameters:
+      service-name: CROSS_SCHEMA_PRODUCTS
+    properties:
+      product-service-name: '${service-name}'
+    type: org.cloudfoundry.existing-service
+  - name: cross-container-sflights
+    parameters:
+      service-name: CROSS_SCHEMA_SFLIGHTS
+    properties:
+      sflight-service-name: '${service-name}'
+    type: org.cloudfoundry.existing-service
 provider: eprsonline
 description: Software Development on SAP HANA (Update Q4/2016)
 copyright: eprsonline
