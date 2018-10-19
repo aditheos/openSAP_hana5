@@ -1,0 +1,29 @@
+{
+    "format_version": 1,
+    "imports": [
+        {
+            "target_table": "UserData.User",
+            "source_data": {
+                "data_type": "CSV",
+                "file_name": "user.csv",
+                "has_header": false
+            },
+            "import_settings": {
+                "import_columns": [
+                    "UserId",
+					"FirstName",
+					"LastName",
+					"Email",
+					"ZMYNEW1"
+                ]
+            },
+			"column_mappings": {
+                    "UserId": 1,
+					"FirstName": 2,
+					"LastName": 3,
+					"Email": 4,
+					"ZMYNEW1": 5
+			}
+        }
+    ]
+}

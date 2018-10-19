@@ -1,0 +1,8 @@
+{
+  "UserData.User": {
+    "target": {
+      "object": "UserData.User",
+      "schema": "USRDB_1"
+    }
+  }
+}

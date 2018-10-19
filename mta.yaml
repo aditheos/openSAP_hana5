@@ -30,6 +30,12 @@ modules:
         properties:
           key: ServiceName_Sflights
           service: '~{sflight-service-name}'
+      - name: hdi_usrdb
+        group: SERVICE_REPLACEMENTS
+        properties:
+          key: ServiceName_UserDB
+          service: '~{hdi-container-usrdb}'
+          
   - name: core_xsjs
     type: nodejs
     path: core_xsjs
@@ -41,6 +47,11 @@ modules:
       - name: openSAP_hana5-uaa
       - name: hdi_psdb_2
       - name: psdb
+  - name: usrdb
+    type: hdb
+    path: usrdb
+    requires:
+      - name: hdi_usrdb
 resources:
   - name: openSAP_hana5-uaa
     type: com.sap.xs.uaa
@@ -65,6 +76,13 @@ resources:
     properties:
       sflight-service-name: '${service-name}'
     type: org.cloudfoundry.existing-service
+  - name: hdi_usrdb
+    parameters:
+      config:
+        schema: usrdb
+    properties:
+      hdi-container-usrdb: '${service-name}'
+    type: com.sap.xs.hdi-container
 provider: eprsonline
 description: Software Development on SAP HANA (Update Q4/2016)
 copyright: eprsonline
