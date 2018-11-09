@@ -7,12 +7,6 @@ modules:
     path: web
     requires:
       - name: openSAP_hana5-uaa
-      - name: core_xsjs_api
-        group: destinations
-        properties:
-          name: core-xsjs-backend
-          url: '~{url}'
-          forwardAuthToken: true
   - name: psdb
     type: hdb
     path: psdb
@@ -35,18 +29,6 @@ modules:
         properties:
           key: ServiceName_UserDB
           service: '~{hdi-container-usrdb}'
-          
-  - name: core_xsjs
-    type: nodejs
-    path: core_xsjs
-    provides:
-      - name: core_xsjs_api
-        properties:
-          url: '${default-url}'
-    requires:
-      - name: openSAP_hana5-uaa
-      - name: hdi_psdb_2
-      - name: psdb
   - name: usrdb
     type: hdb
     path: usrdb
