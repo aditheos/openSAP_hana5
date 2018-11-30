@@ -1,0 +1,41 @@
+FUNCTION "SALES_ORDER_RANKDISC_SQL" ( ip_from_date DATE,
+                                      ip_to_date   DATE,
+	                                  ip_region    NVARCHAR(4)
+									)
+       RETURNS table( company    NVARCHAR(80),
+       	              region     NVARCHAR(4),
+       	              sales      DECIMAL(18,2),
+       	              orders     INTEGER,
+       	              sales_rank INTEGER,
+       	              order_rank INTEGER
+       )
+       LANGUAGE SQLSCRIPT 
+       AS 
+BEGIN 
+/*****************************  
+       Write your function logic 
+ *****************************/ 
+ return
+	SELECT company, region, sales, orders, sales_rank, order_rank
+	FROM(
+			SELECT
+				T2."COMPANYNAME" AS COMPANY,
+				T3."REGION" AS REGION,
+				SUM(T1."NETAMOUNT") AS SALES,
+				COUNT(T0."SALESORDERID") AS ORDERS,
+				DENSE_RANK() OVER ( ORDER BY SUM(T1."NETAMOUNT") desc ) as
+				sales_rank,
+				DENSE_RANK() OVER ( ORDER BY COUNT(T0."SALESORDERID") desc ) as
+				order_rank
+			--T1."DELIVERYDATE"
+			FROM "SO.Header" T0
+			INNER JOIN "SO.Item" T1 ON T0."SALESORDERID" = T1."SALESORDERID"
+			INNER JOIN "MD.BusinessPartner" T2 ON T0."PARTNER.PARTNERID" = T2."PARTNERID"
+			INNER JOIN "MD.Addresses" T3 ON T2."ADDRESSES.ADDRESSID" = T3."ADDRESSID"
+			WHERE TO_DATE(T1."DELIVERYDATE") BETWEEN :IP_FROM_DATE AND :IP_TO_DATE
+		   	  AND T3."REGION" = :IP_REGION
+			GROUP BY T2."COMPANYNAME", T3."REGION"
+			ORDER BY sales_rank, T2."COMPANYNAME"
+		)
+		WHERE sales_rank < 11;
+	END
