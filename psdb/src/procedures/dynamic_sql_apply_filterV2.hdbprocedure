@@ -1,0 +1,30 @@
+PROCEDURE "dynamic_sql_apply_filterV2" ( IN im_filter_string VARCHAR(4000),
+                                        OUT ET_PRODUCTS TABLE( PRODUCTID NVARCHAR(10),
+											                   DELIVERYDATE DAYDATE,
+											                   DLVRD_PRODS_NUM BIGINT,
+											                   DLVRD_PRODS_SUM BIGINT ))
+   LANGUAGE SQLSCRIPT
+   SQL SECURITY INVOKER
+   --DEFAULT SCHEMA <default_schema_name>
+   AS
+BEGIN
+   /*************************************
+       Write your procedure logic 
+   *************************************/
+   before_filter = SELECT * FROM "MD.Products" ;
+   
+   user_filtered_products = 
+   APPLY_FILTER( :before_filter, :im_filter_string );
+   
+   filtered_products = SELECT item."PRODUCT.PRODUCTID" AS PRODUCTID, item.DELIVERYDATE
+                         FROM :user_filtered_products AS header
+                         INNER JOIN "PO.Item" AS item
+                           ON header.PRODUCTID = item."PRODUCT.PRODUCTID";
+   aggregated_products = SELECT PRODUCTID, DELIVERYDATE, 
+                                COUNT(PRODUCTID) AS DLVRD_PRODS_NUM 
+                           FROM :filtered_products
+                       GROUP BY PRODUCTID, DELIVERYDATE;
+                       
+   CALL "calcum_dlvrd_products"( IT_PRODUCTS => :aggregated_products,
+   	                             ET_PRODUCTS => :ET_PRODUCTS );
+END

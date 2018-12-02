@@ -1,0 +1,21 @@
+PROCEDURE "dynamic_sql_previnj" ( IN im_field VARCHAR(100),
+	                      IN im_category VARCHAR(40)
+)
+   LANGUAGE SQLSCRIPT
+   SQL SECURITY INVOKER
+   --DEFAULT SCHEMA <default_schema_name>
+   AS
+BEGIN
+   /*************************************
+       Write your procedure logic 
+   *************************************/
+   DECLARE query_str NCLOB;
+   DECLARE errcond CONDITION FOR SQL_ERROR_CODE 10001;
+   
+   IF is_sql_injection_safe(:im_field) <> 1 THEN
+	 SIGNAL errcond SET MESSAGE_TEXT = 'Invalid Field: ' || :im_field;
+   END IF;
+   
+   query_str = 'SELECT ' || :im_field || ' FROM "MD.Products" WHERE category = ''' || :im_category || '''';
+   EXECUTE IMMEDIATE(query_str);
+END

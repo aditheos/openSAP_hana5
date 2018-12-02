@@ -1,0 +1,15 @@
+PROCEDURE "dynamic_sql_apply_filter" ( IN im_filter_string VARCHAR(4000),
+                                      OUT et_filtered_products "MD.Products")
+   LANGUAGE SQLSCRIPT
+   SQL SECURITY INVOKER
+   --DEFAULT SCHEMA <default_schema_name>
+   AS
+BEGIN
+   /*************************************
+       Write your procedure logic 
+   *************************************/
+   before_filter = SELECT * FROM "MD.Products" ;
+   
+   et_filtered_products = 
+   APPLY_FILTER( :before_filter, :im_filter_string );
+END

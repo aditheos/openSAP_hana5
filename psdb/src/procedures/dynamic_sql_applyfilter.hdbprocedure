@@ -1,0 +1,14 @@
+PROCEDURE "dynamic_sql_applyfilter" ( IN im_filter_string VARCHAR(4000) )
+   LANGUAGE SQLSCRIPT
+   SQL SECURITY INVOKER
+   --DEFAULT SCHEMA <default_schema_name>
+   AS
+BEGIN
+   /*************************************
+       Write your procedure logic 
+   *************************************/
+   DECLARE query NCLOB;
+   query = 'SELECT * FROM "MD.Products" WHERE ' || :im_filter_string;
+   
+   EXECUTE IMMEDIATE(query);
+END

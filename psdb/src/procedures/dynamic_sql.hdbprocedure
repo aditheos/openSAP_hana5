@@ -1,0 +1,15 @@
+PROCEDURE "dynamic_sql" ( IN im_field VARCHAR(100),
+	                      IN im_category VARCHAR(40)
+)
+   LANGUAGE SQLSCRIPT
+   SQL SECURITY INVOKER
+   --DEFAULT SCHEMA <default_schema_name>
+   AS
+BEGIN
+   /*************************************
+       Write your procedure logic 
+   *************************************/
+   DECLARE query_str NCLOB;
+   query_str = 'SELECT ' || :im_field || ' FROM "MD.Products" WHERE category = ''' || :im_category || '''';
+   EXEC(query_str);
+END

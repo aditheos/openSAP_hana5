@@ -1,0 +1,49 @@
+FUNCTION "get_po_counts" (im_chdate DATE )
+       RETURNS TABLE(EMPID NVARCHAR(10),
+                     FULLNAME NVARCHAR(256),
+       	             CREATE_CNT INTEGER,
+       	             CHANGE_CNT INTEGER,
+       	             COMBOS_CNT INTEGER) 
+       LANGUAGE SQLSCRIPT 
+       SQL SECURITY INVOKER AS 
+BEGIN 
+/*****************************  
+       Write your function logic 
+ *****************************/ 
+    PO_CREATE =
+	SELECT COUNT(*) AS CREATE_CNT,
+					"HISTORY.CREATEDBY.EMPLOYEEID" AS EMPID
+	  FROM "PO.Header" 
+	 WHERE PURCHASEORDERID IN (
+			SELECT PURCHASEORDERID
+			  FROM "PO.Item"
+		     WHERE "PRODUCT.PRODUCTID" IS NOT NULL 
+	       )
+	   AND MONTH("HISTORY.CHANGEDAT") = MONTH(:im_chdate)
+  GROUP BY "HISTORY.CREATEDBY.EMPLOYEEID";
+  
+  PO_CHANGE = 
+  SELECT COUNT(*) AS CHANGE_CNT,
+			         "HISTORY.CHANGEDBY.EMPLOYEEID" AS EMPID
+    FROM "PO.Header" WHERE PURCHASEORDERID IN (
+			SELECT PURCHASEORDERID
+			FROM "PO.Item"
+			WHERE "PRODUCT.PRODUCTID" IS NOT NULL 
+	       )
+	   AND MONTH("HISTORY.CHANGEDAT") = MONTH(:im_chdate)
+ GROUP BY "HISTORY.CHANGEDBY.EMPLOYEEID";
+ 
+ ET_PO_HISTORY = 
+ SELECT emp.EMPLOYEEID AS empid,
+        "get_full_name"("NAME.FIRST", "NAME.MIDDLE", "NAME.LAST") AS fullname,
+        cr.create_cnt, ch.change_cnt, 
+        cr.create_cnt + ch.change_cnt as combos_cnt
+   FROM "MD.Employees" AS emp
+   LEFT OUTER JOIN :po_create AS cr
+     ON emp.EMPLOYEEID = cr.EMPID
+   LEFT OUTER JOIN :po_change AS ch
+     ON emp.EMPLOYEEID = ch.EMPID
+  ORDER BY combos_cnt;
+  
+ RETURN SELECT * FROM :ET_PO_HISTORY;
+END;

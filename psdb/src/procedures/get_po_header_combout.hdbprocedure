@@ -1,0 +1,44 @@
+PROCEDURE "get_po_header_combout" ( 
+   OUT ET_PO_HISTORY TABLE( LOGINNAME NVARCHAR(12),
+                            CREATE_CNT INTEGER,
+   	                        CHANGE_CNT INTEGER,
+   	                        COMBOS_CNT INTEGER )
+   )
+   LANGUAGE SQLSCRIPT
+   SQL SECURITY INVOKER
+   --DEFAULT SCHEMA <default_schema_name>
+   READS SQL DATA AS
+BEGIN
+   /*************************************
+       Write your procedure logic 
+   *************************************/
+    PO_CREATE =
+	SELECT COUNT(*) AS CREATE_CNT,
+					"HISTORY.CREATEDBY.EMPLOYEEID" AS EMPID
+	  FROM "PO.Header" WHERE PURCHASEORDERID IN (
+			SELECT PURCHASEORDERID
+			  FROM "PO.Item"
+		     WHERE "PRODUCT.PRODUCTID" IS NOT NULL 
+	)
+  GROUP BY "HISTORY.CREATEDBY.EMPLOYEEID";
+  
+  PO_CHANGE = 
+  SELECT COUNT(*) AS CHANGE_CNT,
+			         "HISTORY.CHANGEDBY.EMPLOYEEID" AS EMPID
+    FROM "PO.Header" WHERE PURCHASEORDERID IN (
+			SELECT PURCHASEORDERID
+			FROM "PO.Item"
+			WHERE "PRODUCT.PRODUCTID" IS NOT NULL 
+	)
+ GROUP BY "HISTORY.CHANGEDBY.EMPLOYEEID";
+ 
+ ET_PO_HISTORY = 
+ SELECT emp.loginname, cr.create_cnt, ch.change_cnt, 
+        cr.create_cnt + ch.change_cnt as combos_cnt
+   FROM "MD.Employees" AS emp
+   LEFT OUTER JOIN :po_create AS cr
+     ON emp.EMPLOYEEID = cr.EMPID
+   LEFT OUTER JOIN :po_change AS ch
+     ON emp.EMPLOYEEID = ch.EMPID
+  ORDER BY combos_cnt;
+END

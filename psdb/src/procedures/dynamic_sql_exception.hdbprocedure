@@ -1,0 +1,62 @@
+PROCEDURE "dynamic_sql_exception" ( IN im_filter_string VARCHAR(4000),
+                                       im_start_date    DATE,
+                                       im_end_date      DATE,
+                                   OUT ET_PRODUCTS TABLE( PRODUCTID NVARCHAR(10),
+										                  DELIVERYDATE DAYDATE,
+										                  DLVRD_PRODS_NUM BIGINT,
+										                  DLVRD_PRODS_SUM BIGINT ))
+   LANGUAGE SQLSCRIPT
+   SQL SECURITY INVOKER
+   --DEFAULT SCHEMA <default_schema_name>
+   AS
+BEGIN
+   /*************************************
+       Write your procedure logic 
+   *************************************/
+   DECLARE temp_date DATE;
+   DECLARE errorcond CONDITION FOR SQL_ERROR_CODE 10001;
+   BEGIN
+	   DECLARE EXIT HANDLER FOR errorcond
+	   BEGIN
+		   DECLARE param NVARCHAR(256);
+		   param = 'Start Date: ' || :im_start_date || ' End Date: ' || :im_end_date;
+		   
+		   /*Interchange the Dates to handle exception */
+		   temp_date = :im_start_date;
+		   im_start_date = :im_end_date;
+		   im_end_date = :temp_date;
+		   
+		   BEGIN AUTONOMOUS TRANSACTION
+			   INSERT INTO "log.errors" 
+			   (ERROR_TIMESTAMP, OBJECT_SCHEMA_NAME, OBJECT_NAME, PARAMETER, SQL_ERROR_CODE, SQL_ERROR_MESSAGE)
+			   VALUES(current_timestamp, ::CURRENT_OBJECT_SCHEMA, ::CURRENT_OBJECT_NAME, 
+			          :param, ::SQL_ERROR_CODE, ::SQL_ERROR_MESSAGE 
+			        );
+			   COMMIT;
+		   END;
+	   END;     
+	   IF :im_start_date > :im_end_date THEN
+		 SIGNAL errorcond SET MESSAGE_TEXT = 'Start Date is Always Less Than or Equal to End Date';
+	   END IF;
+	END;
+	
+   before_filter = SELECT * FROM "MD.Products" ;
+   
+   user_filtered_products = 
+   APPLY_FILTER( :before_filter, :im_filter_string );
+   
+   filtered_products = SELECT item."PRODUCT.PRODUCTID" AS PRODUCTID, item.DELIVERYDATE
+                         FROM :user_filtered_products AS header
+                        INNER JOIN "PO.Item" AS item
+                           ON header.PRODUCTID = item."PRODUCT.PRODUCTID"
+                        WHERE item.DELIVERYDATE >= :im_start_date
+                          AND item.DELIVERYDATE <= :im_end_date;
+                          
+   aggregated_products = SELECT PRODUCTID, DELIVERYDATE, 
+                                COUNT(PRODUCTID) AS DLVRD_PRODS_NUM 
+                           FROM :filtered_products
+                       GROUP BY PRODUCTID, DELIVERYDATE;
+                       
+   CALL "calcum_dlvrd_products"( IT_PRODUCTS => :aggregated_products,
+   	                             ET_PRODUCTS => :ET_PRODUCTS );
+END
