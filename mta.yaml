@@ -7,6 +7,12 @@ modules:
     path: web
     requires:
       - name: openSAP_hana5-uaa
+      - name: ps_js_api
+        group: destinations
+        properties:
+          name: ps-js-backend
+          url: '~{url}'
+          forwardAuthToken: true
   - name: psdb
     type: hdb
     path: psdb
@@ -34,6 +40,17 @@ modules:
     path: usrdb
     requires:
       - name: hdi_usrdb
+  - name: ps_js
+    type: nodejs
+    path: ps_js
+    provides:
+      - name: ps_js_api
+        properties:
+          url: '${default-url}'
+    requires:
+      - name: openSAP_hana5-uaa
+      - name: hdi_psdb_2
+      - name: psdb
 resources:
   - name: openSAP_hana5-uaa
     type: com.sap.xs.uaa
